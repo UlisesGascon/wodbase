@@ -8,7 +8,8 @@ var boxToFirebase = {
     options: {
         wodbasedb: 'https://wodbase.firebaseio.com/',
         boxListUrl: {
-            url: 'https://map.crossfit.com/getAllAffiliates.php',
+            // url: 'https://map.crossfit.com/getAllAffiliates.php',
+            url: 'https://wodbase.firebaseapp.com/crossfitCenters.json',
             json: true
         },
         boxItemUrl: function(id) {
@@ -52,7 +53,7 @@ var boxToFirebase = {
                 }
 
                 // kill the nodejs process
-                process.exit();
+                // process.exit();
             }
         };
 
@@ -63,39 +64,48 @@ var boxToFirebase = {
         var db = new Firebase('https://wodbase.firebaseio.com/crossfitCenters/');
 
         db.once('value', function(snapshot) {
-            snapshot.forEach(function(childSnapshot) {
 
-                console.log()
+            // console.log(snapshot.val());
 
-                var key = childSnapshot.key()
-                var val = childSnapshot.val();
-                var wodId = val._id;
-                var options = {
-                    url: 'https://map.crossfit.com/getAffiliateInfo?aid=' + wodId,
-                    json: true
-                };
+            // var keys = Object.keys(snapshot.val());
 
-                console.log(val)
+            // var count = 0;
 
-                request(options, function callback(error, response, data) {
-                  if (!error && response.statusCode == 200) {
+            var key = childSnapshot.key();
+            var val = childSnapshot.val();
+            var wodId = val._id;
+            var options = {
+                url: 'https://map.crossfit.com/getAffiliateInfo?aid=' + wodId,
+                json: true
+            };
 
-                    key.child('info').set({
+            boxToFirebase.addSingleInfo(options, db, key);
+
+        });
+    },
+    addSingleInfo: function(options, db, key, callback) {
+
+        request(options, function callback(error, response, data) {
+            if (!error && response.statusCode == 200) {
+
+                db.child(key).update({
+                    info: {
                         web: data.website,
                         address: data.address,
                         city: data.city,
                         state: data.state,
                         country: data.country,
                         phone: data.phone
-                    }, console.log(data.name + ' was added.'));
+                    }
+                }, console.log(data.name + ' was added.'));
 
-                  }
-                });
-
-            });
+            } else {
+                console.log('fallo del sistema');
+            }
         });
-    },
+
+    }
 };
 
-// boxToFirebase.addBox();
+boxToFirebase.addBox();
 boxToFirebase.addBoxInfo();
